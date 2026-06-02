@@ -31,7 +31,7 @@ traffic_sign_recognition/
 │   ├── feature_extraction.py    # 特征提取模块（Hu矩）
 │   ├── recognition.py           # 识别模块（Hu矩/模板匹配）
 │   ├── evaluation.py            # 评估模块（准确率/误差分析）
-│   └── src/data_utils.py        # 数据扫描、合成图像生成、模板注册
+│   └── data_utils.py        # 数据扫描、合成图像生成、模板注册
 │
 ├── results/                     # 结果输出
 │   ├── detected/                # 检测结果图像
