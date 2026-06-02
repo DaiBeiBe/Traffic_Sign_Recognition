@@ -1,0 +1,40 @@
+# 编辑器配置
+.vscode/
+
+# Python 缓存和编译文件
+__pycache__/
+*.py[cod]
+*.so
+.Python
+
+# 虚拟环境（项目中的 traffic_sign_env 位于 src 目录下）
+src/traffic_sign_env/
+venv/
+env/
+
+# 数据目录（原始数据、处理后的数据、模板等通常较大，不纳入版本控制）
+data/raw/
+data/ideal/
+data/guide/
+data/mandatory/
+data/prohibit/
+data/stop/
+data/warning/
+data/tilted/
+data/templates/
+
+# 结果目录（检测结果和报告）
+data/results/detected/
+data/results/report/
+
+# 其他可能的输出或临时文件
+*.log
+*.tmp
+*.ds_store
+.DS_Store
+
+# 测试和覆盖率相关
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
