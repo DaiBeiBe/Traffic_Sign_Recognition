@@ -77,7 +77,7 @@ def validate_dataset(dataset: Dict) -> bool:
 # ─────────────────────────────────────────
 
 def _draw_prohibit(size=128) -> np.ndarray:
-    """生成禁止类合成图（红色圆形，内有白色横杠）"""
+    """红色圆环 + 白色圆盘 + 红色横杠"""
     img = np.ones((size, size, 3), dtype=np.uint8) * 200
     cx, cy, r = size // 2, size // 2, size // 2 - 5
     cv2.circle(img, (cx, cy), r, (0, 0, 200), -1)
