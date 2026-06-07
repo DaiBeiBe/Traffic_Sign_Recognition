@@ -37,3 +37,8 @@ results/
 .mypy_cache/
 .coverage
 htmlcov/
+
+# PPT、Word、Excel 等文档
+*.pptx
+*.docx
+*.xlsx
