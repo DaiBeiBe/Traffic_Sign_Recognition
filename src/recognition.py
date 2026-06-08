@@ -8,7 +8,7 @@ recognition.py - 识别模块
 import cv2
 import numpy as np
 import os
-import pickle
+import pickle   # 用于保存和加载分类器模型
 from typing import Dict, List, Optional, Tuple
 
 

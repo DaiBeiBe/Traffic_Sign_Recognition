@@ -16,6 +16,9 @@ from typing import List, Tuple, Optional
 COLOR_RANGES = {
     'prohibit': [
         # ★ V: 100→60, S: 100→90，覆盖实景照片中变暗的红色
+        # Hue：两个窄区间（0-10 和 160-180）覆盖纯红及偏紫红。
+        # Saturation：下限从常见的 100 降至 90，允许颜色不够饱和的红色（如褪色或逆光下的红色标志）。
+        # Value：下限从 100 降至 60，适应实景中因阴影、阴天或夜间变暗的红色区域。
         (np.array([0,   90, 60]),  np.array([10,  255, 255])),
         (np.array([160, 90, 60]),  np.array([180, 255, 255])),
     ],
@@ -48,11 +51,11 @@ SHAPE_CONFIG = {
     'stop':      {'min_circularity': 0.40, 'shape': 'octagon'},
 }
 
-
+# RGB 转 HSV 的颜色范围配置（用于 build_mask_auto 自动检测）
 def bgr_to_hsv(img: np.ndarray) -> np.ndarray:
     return cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
-
+# 颜色定位（已知类别时可传入 sign_type 加速）
 def build_color_mask(hsv: np.ndarray, sign_type: str) -> np.ndarray:
     ranges = COLOR_RANGES.get(sign_type)
     if ranges is None:
@@ -60,16 +63,21 @@ def build_color_mask(hsv: np.ndarray, sign_type: str) -> np.ndarray:
 
     mask = np.zeros(hsv.shape[:2], dtype=np.uint8)
     for (lower, upper) in ranges:
-        mask |= cv2.inRange(hsv, lower, upper)
+        mask |= cv2.inRange(hsv, lower, upper)  # 使用位运算符 |= 将多个区间的结果合并。例如红色有两个区间（0-10 和 160-180），合并后得到所有红色像素的掩膜。
 
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+    # 开运算（OPEN）：先腐蚀后膨胀，用于去除小噪点（如孤立的前景像素或细小的误检区域）。迭代次数 1 次。
     mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN,  kernel, iterations=1)
+    # 闭运算（CLOSE）：先膨胀后腐蚀，用于填充物体内部的小空洞或连接邻近的断裂区域。迭代次数 2 次（更强的填补效果）。
     mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=2)
     return mask
 
 
+# 轮廓筛选与 ROI 提取
 def compute_circularity(contour) -> float:
+    # cv2.contourArea() 是 OpenCV 中计算轮廓封闭区域面积的核心函数。
     area = cv2.contourArea(contour)
+    # cv2.arcLength() 是 OpenCV 中用于计算轮廓周长或曲线长度的函数
     perimeter = cv2.arcLength(contour, True)
     if perimeter == 0:
         return 0.0
@@ -79,7 +87,6 @@ def compute_circularity(contour) -> float:
 # ─────────────────────────────────────────
 # ★ 新增：三角形轮廓验证（warning 专用）
 # ─────────────────────────────────────────
-
 def _is_triangle_like(contour) -> bool:
     """
     用 approxPolyDP 多 epsilon 尝试，检查轮廓是否近似三角形
@@ -95,7 +102,7 @@ def _is_triangle_like(contour) -> bool:
             return True
     return False
 
-
+# 轮廓筛选：按面积和形状过滤候选轮廓，警告类额外验证三角形特征，增强定位准确性
 def filter_contours(contours, sign_type: str,
                     min_area: int = 300) -> List:
     """
@@ -122,7 +129,7 @@ def filter_contours(contours, sign_type: str,
     valid.sort(key=lambda x: x[1], reverse=True)
     return [item[0] for item in valid]
 
-
+# ROI 提取：基于筛选后的轮廓计算边界框，适当扩展边界以包含完整标志区域，返回 ROI 和边界框坐标
 def find_roi(img: np.ndarray, mask: np.ndarray,
              sign_type: str = 'unknown') -> Optional[Tuple[np.ndarray, Tuple]]:
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL,
@@ -244,13 +251,8 @@ def _try_perspective_correct(roi: np.ndarray) -> np.ndarray:
         corrected = corrected[start:start + h, :]
     return corrected
 
-
+# 两步倾斜矫正：透视矫正（椭圆→圆，针对 mandatory） + 旋转矫正（minAreaRect，通用）
 def correct_tilt(roi: np.ndarray) -> np.ndarray:
-    """
-    两步倾斜矫正：
-    1. 透视矫正（椭圆→圆，针对 mandatory）
-    2. 旋转矫正（minAreaRect，通用）
-    """
     roi = _try_perspective_correct(roi)
 
     gray  = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
@@ -276,7 +278,7 @@ def correct_tilt(roi: np.ndarray) -> np.ndarray:
                           flags=cv2.INTER_CUBIC,
                           borderMode=cv2.BORDER_REPLICATE)
 
-
+# 颜色定位主函数：输入图像和可选类别，输出 ROI、掩码、检测到的类别和边界框坐标
 def localize(img: np.ndarray,
              sign_type: Optional[str] = None
              ) -> Tuple[Optional[np.ndarray], np.ndarray, str, Optional[Tuple]]:
@@ -295,7 +297,7 @@ def localize(img: np.ndarray,
     roi, bbox = result
     return roi, mask, detected_type, bbox
 
-
+# 可视化检测结果：在原图上绘制边界框和标签，正确识别用绿色，错误识别用红色
 def draw_detection(img: np.ndarray, bbox: Tuple,
                    label: str, color: Tuple = (0, 255, 0)) -> np.ndarray:
     vis = img.copy()

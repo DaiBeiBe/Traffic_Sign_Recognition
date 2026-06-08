@@ -32,6 +32,7 @@ def denoise(img: np.ndarray, method: str = 'gaussian') -> np.ndarray:
         raise ValueError(f"不支持的去噪方法: {method}")
 
 
+# 对图像的亮度或灰度值进行非线性变换，将图像信号从物理光强线性变化的编码，转换为人眼视觉感知更接近“均匀”的编码。常用于图像增强，尤其是夜间或逆光场景。
 def gamma_correction(img: np.ndarray, gamma: float) -> np.ndarray:
     """
     伽马校正
@@ -41,7 +42,7 @@ def gamma_correction(img: np.ndarray, gamma: float) -> np.ndarray:
     inv_gamma = 1.0 / gamma
     table = np.array([((i / 255.0) ** inv_gamma) * 255
                       for i in range(256)], dtype=np.uint8)
-    return cv2.LUT(img, table)
+    return cv2.LUT(img, table)      # cv2.LUT：查找表映射的函数
 
 
 def enhance_contrast(img: np.ndarray) -> np.ndarray:

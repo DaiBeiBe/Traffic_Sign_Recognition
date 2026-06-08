@@ -8,7 +8,7 @@ import cv2
 import numpy as np
 from typing import Tuple
 
-
+# 胡矩特征：对平移/旋转/缩放不变，适合形状描述，尤其是交通标志的几何特征。
 def compute_hu_moments(binary: np.ndarray) -> np.ndarray:
     """
     计算胡矩特征（7维，对平移/旋转/缩放不变）
@@ -19,7 +19,7 @@ def compute_hu_moments(binary: np.ndarray) -> np.ndarray:
     hu = cv2.HuMoments(moments).flatten()   # shape (7,)
     return hu
 
-
+# 对胡矩做对数变换，缩小数量级差异，利于距离比较。
 def log_transform_hu(hu: np.ndarray) -> np.ndarray:
     """
     对胡矩做对数变换，缩小数量级差异，利于距离比较
@@ -50,6 +50,9 @@ def compute_hog(gray: np.ndarray,
     计算 HOG（方向梯度直方图）特征
     :param gray: 灰度图（会自动 resize 到 win_size）
     :param win_size: 检测窗口大小
+    :param cell_size: 每个 cell 的像素大小
+    :param block_size: 每个 block 的像素大小
+    :param nbins: 方向 bin 的数量
     :return: HOG 特征向量
     """
     gray_resized = cv2.resize(gray, win_size)
@@ -79,6 +82,7 @@ def compute_shape_features(binary: np.ndarray) -> np.ndarray:
     if not contours:
         return np.zeros(3)
 
+    # 选择最大轮廓作为目标，计算面积、周长等基本属性。
     cnt = max(contours, key=cv2.contourArea)
     area = cv2.contourArea(cnt)
     perimeter = cv2.arcLength(cnt, True)
