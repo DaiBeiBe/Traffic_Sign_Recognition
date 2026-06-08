@@ -30,6 +30,7 @@ from data_utils      import (scan_dataset, validate_dataset,
 # 单张图像识别流程
 # ─────────────────────────────────────────
 
+# 参数verbose 的核心作用是控制输出的信息量，便于调试、监控或保持简洁。
 def process_single(img_path: str,
                    recognizer: TrafficSignRecognizer,
                    true_label: str = None,
